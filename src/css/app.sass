@@ -1,0 +1,151 @@
+// app global css in Sass form
+@import './quasar.variables.sass'
+
+a
+  color: white
+  text-decoration: none
+
+@for $i from 0 through 400
+  .pa-#{$i}
+    padding: #{$i}px
+  .pt-#{$i}
+    padding-top: #{$i}px
+  .pb-#{$i}
+    padding-bottom: #{$i}px
+  .pl-#{$i}
+    padding-left: #{$i}px
+  .pr-#{$i}
+    padding-right: #{$i}px
+  .ma-#{$i}
+    margin: #{$i}px
+  .mt-#{$i}
+    margin-top: #{$i}px
+  .mb-#{$i}
+    margin-bottom: #{$i}px
+  .ml-#{$i}
+    margin-left: #{$i}px
+  .mr-#{$i}
+    margin-right: #{$i}px
+
+  .pa-#{$i}
+    padding: #{$i}px !important
+  .pt-#{$i}
+    padding-top: #{$i}px !important
+  .pb-#{$i}
+    padding-bottom: #{$i}px !important
+  .pl-#{$i}
+    padding-left: #{$i}px !important
+  .pr-#{$i}
+    padding-right: #{$i}px !important
+  .ma-#{$i}
+    margin: #{$i}px !important
+  .mt-#{$i}
+    margin-top: #{$i}px !important
+  .mb-#{$i}
+    margin-bottom: #{$i}px !important
+  .ml-#{$i}
+    margin-left: #{$i}px !important
+  .mr-#{$i}
+    margin-right: #{$i}px !important
+  .w-#{$i}
+    width: #{$i}px
+  .h-#{$i}
+    height: #{$i}px
+
+@for $i from -100 through 100
+  layer-#{$i}
+    z-index: #{$i}
+    position: absolute
+    width: 100%
+    height: 100%
+
+.flex-center
+  display: flex
+  justify-content: center
+  align-items: center
+.flex-justify-center
+  display: flex
+  justify-content: center
+.flex-align-center
+  display: flex
+  align-items: center
+.flex-justify-end
+  display: flex
+  justify-content: flex-end
+.flex-align-end
+  display: flex
+  align-items: flex-end
+.flex-justify-start
+  display: flex
+  justify-content: flex-start
+.flex-align-start
+  display: flex
+  align-items: flex-start
+.flex-row
+  display: flex
+  flex-direction: row
+.flex-col
+  display: flex
+  flex-direction: column
+
+.ma-auto
+  margin: auto
+.ml-auto
+  margin-left: auto
+.mr-auto
+  margin-right: auto
+.mt-auto
+  margin-top: auto
+.mb-auto
+  margin-bottom: auto
+
+.ma-auto
+  margin: auto !important
+.ml-auto
+  margin-left: auto !important
+.mr-auto
+  margin-right: auto !important
+.mt-auto
+  margin-top: auto !important
+.mb-auto
+  margin-bottom: auto !important
+
+.h-100
+  height: 100%
+.w-100
+  width: 100%
+.hw-100
+  height: 100%
+  width: 100%
+.mh-100
+  max-height: 100%
+.mw-100
+  max-width: 100%
+
+.vis-anim
+  transition: opacity 350ms ease-out
+.not-hidden
+  opacity: 1
+.hidden
+  opacity: 0 !important
+
+$colors : ( "primary": $primary, "secondary": $secondary, "accent": $accent, "green": $green, "dark": $dark, "lightblue": $lightblue, "positive": $positive, "negative": $negative, "info": $info, "warning": $warning, "grassgreen": $grassgreen)
+
+@each $color, $code in $colors
+  .bg-#{$color}
+    background-color: #{$code}
+
+
+// mods
+.q-field--filled .q-field__control:before
+  background-color: transparent !important
+
+@font-face
+  font-family: 'pokemon'
+  src: url('/Pokemon-Classic.woff2') format('woff2'), url('/Pokemon-Classic.woff') format('woff'), url('/Pokemon-Classic.ttf') format('truetype')
+  font-weight: normal
+  font-style: normal
+  font-display: swap
+
+.poke-font
+  font-family: 'pokemon', sans-serif
