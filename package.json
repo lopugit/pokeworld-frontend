@@ -17,6 +17,8 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
+    "@vuelidate/core": "^2.0.0-alpha.34",
+    "@vuelidate/validators": "^2.0.0-alpha.26",
     "axios": "^0.21.1",
     "core-js": "^3.6.5",
     "dotenv": "^11.0.0",
