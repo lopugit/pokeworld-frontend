@@ -10,8 +10,7 @@
     "log.dev": "pm2 log pokeworld-dev",
     "stop.dev": "pm2 delete ecosystem.config.js",
     "start.dev": "pm2 start ecosystem.config.js",
-    "build-netlify": "quasar build ; cp _redirects ./dist/spa/",
-    "build": "quasar build",
+    "build": "quasar build ; cp _redirects ./dist/spa/",
     "lint": "eslint --ext .js,.vue ./",
     "test": "echo \"No test specified\" && exit 0"
   },
