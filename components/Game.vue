@@ -63,14 +63,14 @@ export default {
         } else {
           this.player.x = this.player.x - 32
         }
-      } else if (e.key === 'ArrowUp') {
+      } else if (e.key === 'ArrowDown') {
         if (this.player.y === 0) {
           this.player.blockY--
           this.player.y = this.tileSize * 15
         } else {
           this.player.y = this.player.y - 32
         }
-      } else if (e.key === 'ArrowDown') {
+      } else if (e.key === 'ArrowUp') {
         if (this.player.y === this.tileSize * 15) {
           this.player.blockY++
           this.player.y = 0
@@ -95,7 +95,7 @@ export default {
               const image = this.storedImages[imageKey]
               if (image?.loaded) {
                 try {
-                  canvas.getContext('2d').drawImage(image.imgEl, canvasX, canvasY, this.tileSize, this.tileSize)
+                  canvas.getContext('2d').drawImage(image.imgEl, canvasX, this.convertY(canvasY), this.tileSize, this.tileSize)
                 } catch {
                 }
               }
@@ -111,7 +111,7 @@ export default {
           const image = this.storedImages[imageKey]
           if (image?.loaded) {
             try {
-              canvas.getContext('2d').drawImage(image.imgEl, this.player.x + 2, this.player.y - 10, 28, 42)
+              canvas.getContext('2d').drawImage(image.imgEl, this.player.x + 2, this.convertY(this.player.y + 10), 28, 42)
             } catch {
             }
           }
@@ -134,6 +134,9 @@ export default {
       if (this.coords.blockX === tile.blockX && this.coords.blockY === tile.blockY) {
         return true
       }
+    },
+    convertY(y) {
+      return (this.tileSize * 15) - y
     },
     async getBlocks() {
       const resp = await this.$axios.get(process.env.API + '/block', {
