@@ -1,12 +1,113 @@
 <template>
-  <div class="w-full flex flex-col items-center justify-center">
-    <div class="flex flex-col md:flex-row">
-      <canvas ref="pwg" class="border border-grass" width="512px" height="512px" />
-      <canvas ref="gmap" class="ml-12 border border-grass" width="512px" height="512px" />
+  <div class="w-full flex flex-col items-center justify-center pb-12">
+    <div v-if="!game.anyLoaded" class="w-full flex flex-col items-center justify-center">
+      <div class="loading-container">
+        <img src="/loading.gif">
+      </div>
+      <div class="text-lg text-grass">
+        Loading..
+      </div>
     </div>
-    <div class="debug flex flex-col">
-      <pre class="pt-4">{{ debug('player') }}</pre>
-      <pre class="pt-4">{{ debug('map') }}</pre>
+    <div v-else class="w-full flex flex-col items-center justify-center">
+      <div
+        class="gameboy bg-gameboy-grey max-w-full flex flex-col items-center justify-center rounded-2xl shadow-md px-2 py-2 md:px-4 md:py-4"
+      >
+        <div
+          class="flex flex-row overflow-scroll"
+          :style="{
+            maxWidth: (game.canvasWidth * game.scale) + 'px'
+          }"
+        >
+          <canvas ref="pwg" class="bg-black rounded-lg" :width="(game.canvasWidth * game.scale)+'px'" :height="(game.canvasHeight*game.scale)+'px'" />
+          <canvas v-if="game.showLayer1" ref="layer1" class="bg-black ml-8 rounded-lg" :width="(game.canvasWidth * game.scale)+'px'" :height="(game.canvasHeight*game.scale)+'px'" />
+          <canvas v-if="game.showLayerGmap" ref="gmap" class="bg-black ml-8 rounded-lg" :width="(game.canvasWidth * game.scale)+'px'" :height="(game.canvasHeight*game.scale)+'px'" />
+        </div>
+        <div class="w-full pt-10 md:pt-14 pb-12">
+          <div class="controls flex flex-row">
+            <div class="dpad ml-4 md:ml-12">
+              <div class="up" @click="action('moveUp')" />
+              <div class="right" @click="action('moveRight')" />
+              <div class="down" @click="action('moveDown')" />
+              <div class="left" @click="action('moveLeft')" />
+              <div class="middle" />
+            </div>
+            <div class="ml-auto a-b mr-4 md:mr-12">
+              <div class="b">
+                B
+              </div>
+              <div class="a">
+                A
+              </div>
+            </div>
+          </div>
+          <div class="pt-12 md:pt-20" />
+          <div class="start-select">
+            <div class="select" @click="game.debug = !game.debug">
+              SELECT
+            </div>
+            <div class="start">
+              START
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-if="game.debug" class="flex flex-col">
+        <div class="flex flex-row items-center justify-center flex-wrap pt-8">
+          <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.regenerate = !game.regenerate">
+            Turn Regenerate {{ game.regenerate ? 'Off' : 'On' }}
+          </div>
+          <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.tileBrowser = !game.tileBrowser">
+            {{ game.tileBrowser ? 'Disable' : 'Enable' }} Tile Browser
+          </div>
+          <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.showLayer1 = !game.showLayer1">
+            Toggle Layer 1
+          </div>
+          <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.showLayerGmap = !game.showLayerGmap">
+            Toggle Gmap
+          </div>
+          <div class="py-2 px-8 mb-4 bg-grass text-white cursor-pointer" @click="game.showStats = !game.showStats">
+            Toggle Stats
+          </div>
+        </div>
+        <div v-if="game.tileBrowser">
+          <div class="flex flex-row">
+            <div class="flex-col mr-2">
+              <input v-model.number="game.tileBrowserX" placeholder="map X" class="py-2 px-4">
+              <div class="flex pt-2">
+                <div class="bg-grass text-white py-1 px-3" @click="game.tileBrowserX -= 32">
+                  -
+                </div>
+                <div class="bg-grass text-white py-1 px-3 ml-auto" @click="game.tileBrowserX += 32">
+                  +
+                </div>
+              </div>
+            </div>
+            <div class="flex-col">
+              <input v-model.number="game.tileBrowserY" placeholder="map Y" class="py-2 px-4">
+              <div class="flex pt-2">
+                <div class="bg-grass text-white py-1 px-3" @click="game.tileBrowserY -= 32">
+                  -
+                </div>
+                <div class="bg-grass text-white py-1 px-3 ml-auto" @click="game.tileBrowserY += 32">
+                  +
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col">
+            <div>{{ tileBrowserTile ? 'Current' : 'None Found' }} {{ game.tileBrowserX }} {{ game.tileBrowserY }}</div>
+            <pre class="whitespace-pre-wrap"> {{ JSON.stringify(tileBrowserTile, null, 2) }}</pre>
+            <div v-for="(tile, idx) in tileBrowserTiles" :key="idx">
+              <div>Tile History {{ idx }} </div>
+              <pre class="whitespace-pre-wrap"> {{ JSON.stringify(tile, null, 2) }}</pre>
+            </div>
+          </div>
+        </div>
+        <div v-if="game.showStats" class="debug flex flex-col">
+          <pre class="pt-4 whitespace-pre-wrap">{{ debug('player') }}</pre>
+          <pre class="pt-4 whitespace-pre-wrap">{{ debug('map') }}</pre>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -14,15 +115,18 @@
 import { get } from 'lodash'
 
 const tileSize = 32
+const blockSize = 512
 const blockCount = 16
-const playerBoundaryOffset = 4
+const playerBoundaryOffset = 6
 export default {
   name: 'Game',
   data() {
     return {
-      blocks: [],
-      tiles: [],
       images: [],
+      blockDb: {},
+      tileDb: {},
+      tileHistoryDb: {},
+      queries: {},
       storedImages: {},
       map: {
         width: blockCount - 1,
@@ -31,15 +135,32 @@ export default {
         playerXBoundaryOffset: tileSize * playerBoundaryOffset,
         playerYBoundaryOffset: tileSize * playerBoundaryOffset,
         blockX: 0,
-        blockY: 0
+        blockY: 0,
+        lat: null,
+        lng: null
       },
       game: {
+        scale: 1,
+        regenerate: false,
+        anyLoaded: false,
+        canvasWidth: 512,
+        canvasHeight: 512,
+        debug: false,
+        initialized: false,
+        showLayer1: false,
+        showLayerGmap: false,
+        showStats: false,
+        columns: 1,
         blockCount,
         blockWidth: tileSize * blockCount,
         blockHeight: tileSize * blockCount,
         playerXBoundaryOffset: tileSize * playerBoundaryOffset,
         playerYBoundaryOffset: tileSize * playerBoundaryOffset,
-        tileSize
+        tileSize,
+        blockSize,
+        tileBrowser: false,
+        tileBrowserX: 0,
+        tileBrowserY: 0
       },
       player: {
         initialized: false,
@@ -51,26 +172,65 @@ export default {
       }
     }
   },
-  watch: {
-    'map.x'() {
-      this.updateMapBlock()
+  computed: {
+    tileBrowserTile() {
+      return Object.values(this.tileDb).find(tile => tile.mapX == this.game.tileBrowserX && tile.mapY == this.game.tileBrowserY)
     },
-    'map.y'() {
-      this.updateMapBlock()
+    tileBrowserTiles() {
+      return this.tileHistoryDb[this.tileBrowserTile?.uuid]
+    }
+  },
+  watch: {
+    game: {
+      handler() {
+        this.$store.commit('things/thing', {
+          key: 'game',
+          value: JSON.parse(JSON.stringify(this.game))
+        })
+      },
+      deep: true
+    },
+    'game.regenerate'() {
+      if (this.game.regenerate && this.game.initialized) {
+        console.log('Game regenerate watcher getting blocks')
+        this.getBlocks()
+      }
+    },
+    map: {
+      handler() {
+        this.$store.commit('things/thing', {
+          key: 'map',
+          value: JSON.parse(JSON.stringify(this.map))
+        })
+      },
+      deep: true
+    },
+    player: {
+      handler() {
+        this.$store.commit('things/thing', {
+          key: 'player',
+          value: JSON.parse(JSON.stringify(this.player))
+        })
+      },
+      deep: true
     },
     'player.x'() {
       this.updatePlayerBlock()
+      this.updateMapBlock()
     },
     'player.y'() {
       this.updatePlayerBlock()
+      this.updateMapBlock()
     },
     'player.blockX'() {
       if (this.player.initialized) {
+        console.log('Player blockX watcher getting blocks')
         this.getBlocks()
       }
     },
     'player.blockY'() {
       if (this.player.initialized) {
+        console.log('Player blockY watcher getting blocks')
         this.getBlocks()
       }
     },
@@ -78,13 +238,13 @@ export default {
       window.tiles = this.tiles
     }
   },
-  async beforeMount() {
+  async mounted() {
+    await this.initializeGame()
     await this.initializeMap()
     await this.initializePlayer()
-  },
-  mounted() {
     clearInterval(window.gameInterval)
-    window.gameInterval = setInterval(this.renderCanvas, 1000 / 60)
+    const fps = 60
+    window.gameInterval = setInterval(this.renderCanvas, 1000 / fps)
   },
   methods: {
     // DEBUG
@@ -96,87 +256,180 @@ export default {
     updatePlayerBlock() {
       this.player.blockX = Math.floor(this.player.x / 512)
       this.player.blockY = Math.floor(this.player.y / 512)
+      const blocks = Object.values(this.blockDb)
+      for (const block of blocks) {
+        if (block.x === this.player.blockX && block.y === this.player.blockY) {
+          // this.player.block = block
+          delete this.player.block
+          this.player.latlng = block.lat + ', ' + block.lng
+          break
+        }
+      }
     },
     initializePlayer() {
-      this.player.x = this.map.x + ((this.game.blockCount / 2) * this.game.tileSize)
-      this.player.y = this.map.y + ((this.game.blockCount / 2) * this.game.tileSize)
-      this.player.initialized = true
+      console.log('Initializing player')
+      const storedPlayer = JSON.parse(JSON.stringify(this.$store.state.things.player))
+      if (storedPlayer && storedPlayer.x && storedPlayer.y) {
+        console.log('Found stored player', storedPlayer.x, storedPlayer.y)
+        delete storedPlayer.initialized
+        Object.assign(this.player, storedPlayer)
+      } else {
+        this.player.x = this.map.x + ((this.game.blockCount / 2) * this.game.tileSize)
+        this.player.y = this.map.y + ((this.game.blockCount / 2) * this.game.tileSize)
+      }
+      this.updatePlayerBlock()
+      console.log('Player initialization getting blocks')
       this.getBlocks()
       this.player.keydown = this.onKeydown
-
-      this.updatePlayerBlock()
 
       document.removeEventListener('keydown', window?.player?.keydown)
       window.player = this.player
       document.addEventListener('keydown', this.player.keydown)
+
+      clearInterval(window.playerMovementQueueInterval)
+      window.playerMovementQueueInterval = setInterval(() => {
+        if (this.player.queuedAction) {
+          const queuedAction = this.player.queuedAction
+          this.action(queuedAction)
+        }
+      }, 50)
+
+      this.$nextTick(() => {
+        console.log('Initialized player')
+        this.player.initialized = true
+      })
+    },
+    moveRight() {
+      const mapXRightCutoff = this.map.x + (this.game.blockWidth - this.game.playerXBoundaryOffset)
+      if (this.player.x >= mapXRightCutoff) {
+        this.map.x += this.game.tileSize
+      }
+      this.player.x = this.player.x + this.game.tileSize
+    },
+    moveLeft() {
+      const mapXLeftCutoff = this.map.x + this.game.playerXBoundaryOffset
+      if (this.player.x < mapXLeftCutoff) {
+        this.map.x -= this.game.tileSize
+      }
+      this.player.x = this.player.x - this.game.tileSize
+    },
+    moveUp() {
+      const mapYUpCutoff = this.map.y + (this.game.blockWidth - this.game.playerYBoundaryOffset)
+      if (this.player.y >= mapYUpCutoff) {
+        this.map.y += this.game.tileSize
+      }
+      this.player.y = this.player.y + this.game.tileSize
+    },
+    moveDown() {
+      const mapYDownCutoff = this.map.y + this.game.playerYBoundaryOffset
+      if (this.player.y < mapYDownCutoff) {
+        this.map.y -= this.game.tileSize
+      }
+      this.player.y = this.player.y - this.game.tileSize
+    },
+    action(action) {
+      if (this.player.lastAction && Date.now() - this.player.lastAction < 300) {
+        if (!this.player.queuedAction) {
+          console.log('queueing action')
+          this.player.queuedAction = action
+        }
+        return
+      }
+      console.log('playing action')
+      delete this.player.queuedAction
+      this.player.lastAction = Date.now()
+      this[action]()
     },
     onKeydown(e) {
       if (e.key === 'ArrowRight') {
-        const mapXRightCutoff = this.map.x + (this.game.blockWidth - this.game.playerXBoundaryOffset)
-        if (this.player.x >= mapXRightCutoff) {
-          this.map.x += this.game.tileSize
-        }
-        this.player.x = this.player.x + this.game.tileSize
+        e.preventDefault()
+        this.action('moveRight')
       } else if (e.key === 'ArrowLeft') {
-        const mapXLeftCutoff = this.map.x + this.game.playerXBoundaryOffset
-        if (this.player.x < mapXLeftCutoff) {
-          this.map.x -= this.game.tileSize
-        }
-        this.player.x = this.player.x - this.game.tileSize
+        e.preventDefault()
+        this.action('moveLeft')
       } else if (e.key === 'ArrowDown') {
-        const mapYDownCutoff = this.map.y + this.game.playerYBoundaryOffset
-        if (this.player.y < mapYDownCutoff) {
-          this.map.y -= this.game.tileSize
-        }
-        this.player.y = this.player.y - this.game.tileSize
+        e.preventDefault()
+        this.action('moveDown')
       } else if (e.key === 'ArrowUp') {
-        const mapYUpCutoff = this.map.y + (this.game.blockWidth - this.game.playerYBoundaryOffset)
-        if (this.player.y >= mapYUpCutoff) {
-          this.map.y += this.game.tileSize
-        }
-        this.player.y = this.player.y + this.game.tileSize
+        e.preventDefault()
+        this.action('moveUp')
       }
     },
 
     // MAP
     async initializeMap() {
-      const resp = await this.$axios.get(process.env.API + '/blockLatLng', {
-        params: {
-          lng: 145.00569971273293,
-          lat: -37.87569351417865
+      const storedMap = JSON.parse(JSON.stringify(this.$store.state.things.map))
+      if (storedMap && storedMap.x && storedMap.y && storedMap.blockX && storedMap.blockY) {
+        Object.assign(this.map, storedMap)
+      } else {
+        const resp = await this.$axios.get(process.env.API + '/blockLatLng', {
+          params: {
+            lng: 145.00569971273293,
+            lat: -37.87569351417865
+          }
+        }).catch(err => console.error(err))
+        console.log('resp', resp)
+        if (resp && resp.data) {
+          this.map.blockX = resp.data.block.x
+          this.map.blockY = resp.data.block.y
+          this.map.x = resp.data.block.x * this.game.blockWidth
+          this.map.y = resp.data.block.y * this.game.blockHeight
         }
-      }).catch(err => console.error(err))
-      console.log('resp', resp)
-      if (resp && resp.data) {
-        this.map.blockX = resp.data.block.x
-        this.map.blockY = resp.data.block.y
-        this.map.x = resp.data.block.x * this.game.blockWidth
-        this.map.y = resp.data.block.y * this.game.blockHeight
       }
     },
     updateMapBlock() {
-      if ((this.map.x + this.player.x) > ((this.map.blockX + 1) * 512)) {
-        this.map.blockX++
-      } else if ((this.map.x + this.player.x) < this.map.blockX * 512) {
-        this.map.blockX--
-      }
-      if ((this.map.y + this.player.y) > ((this.map.blockY + 1) * 512)) {
-        this.map.blockY++
-      } else if ((this.map.y + this.player.y) < this.map.blockY * 512) {
-        this.map.blockY--
-      }
+      this.map.blockX = this.player.blockX
+      this.map.blockY = this.player.blockY
+      this.map.lat = this.player.lat
+      this.map.lng = this.player.lng
     },
 
     // GAME
+    initializeGame() {
+      const storedGame = JSON.parse(JSON.stringify(this.$store.state.things.game))
+      if (storedGame) {
+        delete storedGame.initialized
+        delete storedGame.anyLoaded
+        Object.assign(this.game, storedGame)
+      }
+      this.$nextTick(() => {
+        this.game.initialized = true
+      })
+
+      this.resizeGame()
+      clearInterval(window.resizeInterval)
+      window.resizeInterval = setInterval(() => {
+        this.resizeGame()
+      }, 1000)
+      window.addEventListener('resize', (e) => {
+        this.resizeGame()
+      })
+    },
+    resizeGame() {
+      if (window.innerWidth > (2 * this.game.canvasWidth) * 1.2) {
+        // do nothing
+        this.game.columns = 2
+        this.game.scale = 1
+      } else if (window.innerWidth > this.game.canvasWidth * 1.2) {
+        this.game.columns = 1
+        this.game.scale = 1
+      } else {
+        this.game.columns = 1
+        this.game.scale = (window.innerWidth / this.game.canvasWidth) * 0.91
+      }
+    },
     renderCanvas() {
       const canvas = this.$refs.pwg
       const gMapCanvas = this.$refs.gmap
+      const layer1 = this.$refs.layer1
+
+      const tiles = Object.values(this.tileDb)
 
       // render floor tiles
-      if (this.tiles) {
+      if (tiles) {
         this.map.tileCount = 0
         this.map.blocks = []
-        this.tiles.forEach((tile, index) => {
+        tiles.forEach((tile, index) => {
           if (this.tileShouldRender(tile)) {
             if (!this.map.blocks.includes(tile.blockX + '_' + tile.blockY)) {
               this.map.blocks.push(tile.blockX + '_' + tile.blockY)
@@ -189,7 +442,17 @@ export default {
               const imageTile = this.storedImages[imageTileKey]
               if (imageTile?.loaded) {
                 try {
-                  canvas.getContext('2d').drawImage(imageTile.imgEl, x, this.convertY(y), this.game.tileSize, this.game.tileSize)
+                  layer1.getContext('2d').drawImage(imageTile.imgEl, x * this.game.scale, this.convertY(y) * this.game.scale, this.game.tileSize * this.game.scale, this.game.tileSize * this.game.scale)
+                } catch {
+                }
+              }
+            }
+            const image2TileKey = this.images.indexOf(tile.img2)
+            if (image2TileKey >= 0) {
+              const image2Tile = this.storedImages[image2TileKey]
+              if (image2Tile?.loaded) {
+                try {
+                  canvas.getContext('2d').drawImage(image2Tile.imgEl, x * this.game.scale, this.convertY(y) * this.game.scale, this.game.tileSize * this.game.scale, this.game.tileSize * this.game.scale)
                 } catch {
                 }
               }
@@ -199,7 +462,7 @@ export default {
               const imageGmap = this.storedImages[imageGmapKey]
               if (imageGmap?.loaded) {
                 // try {
-                gMapCanvas.getContext('2d').drawImage(imageGmap.imgEl, x, this.convertY(y), this.game.tileSize, this.game.tileSize)
+                gMapCanvas.getContext('2d').drawImage(imageGmap.imgEl, x * this.game.scale, this.convertY(y) * this.game.scale, this.game.tileSize * this.game.scale, this.game.tileSize * this.game.scale)
                 // } catch {
                 //   console.error('something went wrong')
                 // }
@@ -207,6 +470,27 @@ export default {
             }
           }
         })
+      }
+
+      const blocks = Object.values(this.blockDb)
+
+      if (blocks) {
+        for (const block of blocks) {
+          if (this.blockShouldRender(block)) {
+            const x = (block.mapX - this.map.x)
+            const y = ((block.mapY + (512 - 32)) - this.map.y) // ? not sure why you need to 512-32
+            const imageBlockKey = this.images.indexOf(block.googleMap)
+            if (imageBlockKey >= 0) {
+              const imageBlock = this.storedImages[imageBlockKey]
+              if (imageBlock?.loaded) {
+                try {
+                  gMapCanvas.getContext('2d').drawImage(imageBlock.imgEl, x * this.game.scale, this.convertY(y) * this.game.scale, this.game.blockSize * this.game.scale, this.game.blockSize * this.game.scale)
+                } catch {
+                }
+              }
+            }
+          }
+        }
       }
 
       // render character
@@ -219,7 +503,9 @@ export default {
               const x = (this.player.x - this.map.x)
               const y = (this.player.y - this.map.y)
 
-              canvas.getContext('2d').drawImage(image.imgEl, x + 2, this.convertY(y + 10), 28, 42)
+              canvas.getContext('2d').drawImage(image.imgEl, (x + 2) * this.game.scale, this.convertY(y + 10) * this.game.scale, 28 * this.game.scale, 42 * this.game.scale)
+              gMapCanvas.getContext('2d').drawImage(image.imgEl, (x + 2) * this.game.scale, this.convertY(y + 10) * this.game.scale, 28 * this.game.scale, 42 * this.game.scale)
+              layer1.getContext('2d').drawImage(image.imgEl, (x + 2) * this.game.scale, this.convertY(y + 10) * this.game.scale, 28 * this.game.scale, 42 * this.game.scale)
             } catch {
             }
           }
@@ -256,31 +542,136 @@ export default {
 
       return xValid && yValid
     },
+    blockShouldRender(block) {
+      let xValid = false
+      let yValid = false
+
+      const validXBlocks = [this.map.blockX - 2, this.map.blockX - 1, this.map.blockX, this.map.blockX + 1, this.map.blockX + 2]
+      const validYBlocks = [this.map.blockY - 2, this.map.blockY - 1, this.map.blockY, this.map.blockY + 1, this.map.blockY + 2]
+
+      if (
+        validXBlocks.includes(block.x)
+      ) {
+        xValid = true
+      }
+
+      if (
+        validYBlocks.includes(block.y)
+      ) {
+        yValid = true
+      }
+
+      return xValid && yValid
+    },
     convertY(y) {
       return (this.game.tileSize * 15) - y
     },
     async getBlocks() {
       console.log('Maybe getting blocks')
       if (this.player.blockX && this.player.blockY) {
-        console.log('Getting blocks')
-        const resp = await this.$axios.get(process.env.API + '/block', {
-          params: {
-            blockX: this.player.blockX,
-            blockY: this.player.blockY
+        let count = 0
+        const offsets = [
+          [0, 0],
+          [1, 0],
+          [0, 1],
+          [1, 1],
+          [-1, 0],
+          [0, -1],
+          [-1, -1],
+          [1, -1],
+          [-1, 1],
+          [2, 0],
+          [0, 2],
+          [-2, 0],
+          [0, -2]
+        ]
+        const offsetsToQuery = []
+        for (const offset of offsets) {
+          if (this.game.regenerate || !this.queries[(this.player.blockX + offset[0]) + ',' + (this.player.blockY + offset[1])]) {
+            count++
+            this.queries[(this.player.blockX + offset[0]) + ',' + (this.player.blockY + offset[1])] = 'pending'
+            offsetsToQuery.push(offset)
           }
-        }).catch(err => console.error(err))
+        }
+        if (offsetsToQuery.length) {
+          console.log('Getting blocks')
+          const startTime = Date.now()
+          console.log('Sending request for block', (this.player.blockX) + ',' + (this.player.blockY))
+          let cc = 0
+          const uniqueUuids = []
+          const resp = await this.$axios.get(process.env.API + '/batchBlocks', {
+            params: {
+              // regenerate: true,
+              regenerate: this.game.regenerate,
+              offsets: offsetsToQuery,
+              blockX: this.player.blockX,
+              blockY: this.player.blockY
+            }
+          }).catch(err => console.error(err))
 
-        if (get(resp, 'data.tiles')) {
-          this.blocks.push(resp.data.block)
-          this.tiles.push(...resp.data.tiles)
-          this.storeTileData()
+          if (get(resp, 'data.tiles')) {
+            setTimeout(() => {
+              this.game.anyLoaded = true
+            }, 500)
+            console.log('Got', resp.data.tiles.length, 'tiles for block', (this.player.blockX) + ',' + (this.player.blockY))
+            for (const tile of resp.data.tiles) {
+              if (!uniqueUuids.includes(tile.uuid)) {
+                uniqueUuids.push(tile.uuid)
+              }
+              if (
+                (this.tileDb[tile.uuid] && this.tileDb[tile.uuid].updated < tile.updated) ||
+              !this.tileDb[tile.uuid]?.updated
+              ) {
+                cc++
+                this.tileDb[tile.uuid] = tile
+              } else if (!this.tileDb[tile.uuid]) {
+                cc++
+                this.tileDb[tile.uuid] = tile
+              }
+              if (!this.tileHistoryDb[tile.uuid]) {
+                this.tileHistoryDb[tile.uuid] = []
+              }
+              this.tileHistoryDb[tile.uuid].push(tile)
+            }
+            this.storeTileData()
+            for (const block of resp?.data?.blocks || []) {
+              if (
+                (this.blockDb[block.uuid] && this.blockDb[block.uuid].updated < block.updated) ||
+                !this.blockDb[block.uuid]?.updated
+              ) {
+                this.blockDb[block.uuid] = block
+              } else if (!this.blockDb[block.uuid]) {
+                this.blockDb[block.uuid] = block
+              }
+            }
+            this.storeBlockData()
+          }
+          console.log('Counted', cc, 'tiles updated and', uniqueUuids.length, 'unique tiles')
+
+          const endTime = Date.now() - startTime
+          console.log('Got', count, 'blocks in', endTime / 1000, 's')
         }
       } else {
-        console.log('no map blockX or blockY')
+        console.log('no player blockX or blockY')
       }
     },
     storeTileData() {
-      this.tiles.forEach((tile) => {
+      const tiles = Object.values(this.tileDb)
+      tiles.forEach((tile) => {
+        if (tile.img2) {
+          if (!this.images.includes(tile.img2)) {
+            this.images.push(tile.img2)
+            const imagesId = this.images.indexOf(tile.img2)
+            const imgEl = new Image()
+            this.storedImages[imagesId] = {
+              imgEl
+            }
+            imgEl.onload = (e) => {
+              this.storedImages[imagesId].loaded = true
+            }
+            imgEl.src = '/tiles/' + tile.img2 + '.png'
+          }
+        }
         if (tile.img) {
           if (!this.images.includes(tile.img)) {
             this.images.push(tile.img)
@@ -310,7 +701,231 @@ export default {
           }
         }
       })
+    },
+    storeBlockData() {
+      const blocks = Object.values(this.blockDb)
+      blocks.forEach((block) => {
+        if (block.googleMap) {
+          if (!this.images.includes(block.googleMap)) {
+            this.images.push(block.googleMap)
+            const imagesIdGmap = this.images.indexOf(block.googleMap)
+            const imgElGmap = new Image()
+            this.storedImages[imagesIdGmap] = {
+              imgEl: imgElGmap
+            }
+            imgElGmap.onload = (e) => {
+              this.storedImages[imagesIdGmap].loaded = true
+            }
+            imgElGmap.src = 'data:image/png;base64,' + block.googleMap
+          }
+        }
+      })
     }
   }
 }
 </script>
+<style lang="scss">
+.controls {
+  display:flex;
+  justify-content:space-between;
+
+  .dpad {
+    position:relative;
+    display:inline-block;
+    width:90px;
+    height:90px;
+    z-index:5;
+
+    > * {
+      width:33%;
+      height:33%;
+      position:absolute;
+      background-color:#565e6a;
+      cursor:pointer;
+
+      i {
+        position:relative;
+        display:block;
+        margin:0 auto;
+        text-align:center;
+        height:100%;
+        font-size:28px;
+        color:#333a4a;
+        text-shadow:0px -0.5px 0px #aaa;
+      }
+    }
+
+    .up {
+      top:calc(0% + 4px);
+      left:33%;
+      border-top:4px solid black;
+      border-left:4px solid black;
+      border-right:4px solid black;
+      border-radius:5px 5px 0px 0px;
+
+      &:active {
+        background:linear-gradient(to top, #565e6a 0%, #333 100%);
+      }
+
+      i {
+        top:-5px;
+      }
+    }
+    .right {
+      top:33%;
+      left:calc(66% - 4px);
+      border-top:4px solid black;
+      border-bottom:4px solid black;
+      border-right:4px solid black;
+      border-radius:0px 5px 5px 0px;
+      box-shadow:0px -2px 0px #888 inset;
+
+      &:active {
+        background:linear-gradient(to right, #565e6a 0%, #333 100%);
+      }
+
+      i {
+        top:-5px;
+      }
+    }
+    .down {
+      top:calc(66% - 4px);
+      left:33%;
+      border-left:4px solid black;
+      border-bottom:4px solid black;
+      border-right:4px solid black;
+      border-radius:0px 0px 5px 5px;
+      box-shadow:0px -2px 0px #888 inset;
+
+      &:active {
+        background:linear-gradient(to bottom, #565e6a 0%, #333 100%);
+      }
+    }
+    .left {
+      top:33%;
+      left:calc(0% + 4px);
+      border-top:4px solid black;
+      border-bottom:4px solid black;
+      border-left:4px solid black;
+      border-radius:5px 0px 0px 5px;
+      box-shadow:0px -2px 0px #888 inset;
+
+      i {
+        top:-5px;
+      }
+
+      &:active {
+        background:linear-gradient(to left, #565e6a 0%, #333 100%);
+      }
+    }
+    .middle {
+      top:33%;
+      left:33%;
+      z-index:-5;
+
+      &::after {
+        content:'';
+        position:absolute;
+        top:20%;
+        left:20%;
+        display:inline-block;
+        border:1px solid #6e737a;
+        background:linear-gradient(to bottom, #6d7075 0%, #6d7075 30%, #23272f 70%, #23272f 100%);
+        border-radius:50%;
+        height:60%;
+        width:60%;
+      }
+    }
+
+    .up-down {
+      background-color:#565e6a;
+      border:4px solid black;
+              border-radius:5px;
+      width:20px;
+      height:60px;
+    }
+    .left-right {
+      background-color:#565e6a;
+      border:4px solid black;
+      border-radius:5px;
+      width:60px;
+      height:20px;
+    }
+  }
+  .a-b {
+    position:relative;
+    display:inline-block;
+    width:120px;
+    height:90px;
+
+    .a, .b {
+      position:absolute;
+      display:inline-block;
+      font-size:22px;
+      width:40px;
+      height:40px;
+      line-height: 40px;
+      border-radius:50%;
+      background-color:#2c313e;
+      border-bottom:2px solid #888;
+      box-shadow:-1px 1px 5px black, 0px 0px 5px black inset;
+      text-shadow:0px -1px 1px #888;
+      color:#2c313e;
+      text-align:center;
+      -webkit-user-select:none;
+      cursor:pointer;
+      transition:box-shadow 0.1s ease-out, border 0.1s ease-out, line-height 0.2s ease-out;
+
+      &:active {
+        box-shadow:-1px 1px 1px black, 0px 0px 5px black inset;
+        border-width:0px;
+        line-height:45px;
+      }
+    }
+    .a {
+      top:15px;
+      right:10px;
+    }
+    .b {
+      top:35px;
+      left:0%;
+    }
+  }
+}
+
+.start-select {
+  width:100%;
+  height:60px;
+  display:flex;
+  justify-content:center;
+
+  .select, .start {
+    display:inline-block;
+    color:#6b67ed;
+    text-shadow:0px -1px 0px #3436bf;
+    letter-spacing:-1px;
+    width:60px;
+    font-size:16px;
+    text-align:center;
+    margin-top:60px;
+
+    &::before {
+      content:'';
+      display:block;
+      margin:0 auto;
+      width:30px;
+      height:10px;
+      margin-bottom:5px;
+      border-radius:40%;
+      background:linear-gradient(to bottom, #0b0a1c 0%, #0b0a1c 30%, #62636c 70%, #62636c 100%);
+      background-repeat:no-repeat;
+      border:2px solid #0b0a1c;
+      box-shadow:0px -2px 1px #8482e9;
+      cursor:pointer;
+    }
+    &:active::before {
+      background:linear-gradient(to bottom, #0b0a1c 0%, #0b0a1c 50%, #62636c 100%);
+    }
+  }
+}
+</style>

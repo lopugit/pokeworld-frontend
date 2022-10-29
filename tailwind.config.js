@@ -99,6 +99,9 @@ const tailwindConf = {
       grass: '#25C189',
       black: '#181818',
       white: '#ffffff',
+      gameboy: {
+        grey: '#EBE6E2'
+      },
       blue: '#3F81E6',
       teal: '#D4F2EF',
       transparent: 'rgba(255,255,255,0)'

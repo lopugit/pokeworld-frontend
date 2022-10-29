@@ -1,5 +1,8 @@
 export const state = () => ({
-  loggedIn: false
+  loggedIn: false,
+  player: {},
+  map: {},
+  game: {}
 })
 
 export const getters = {

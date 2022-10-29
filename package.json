@@ -18,6 +18,8 @@
     "lodash": "^4.17.21",
     "lodash-es": "^4.17.21",
     "nuxt": "^2.15.8",
+    "sass": "^1.55.0",
+    "sass-loader": "^10",
     "vue": "^2.7.10",
     "vue-server-renderer": "^2.7.10",
     "vue-template-compiler": "^2.7.10",
