@@ -42,10 +42,16 @@
           </div>
           <div class="pt-12 md:pt-20" />
           <div class="start-select">
-            <div class="select" @click="game.debug = !game.debug">
+            <div class="select cursor-pointer" @click="zoom('out')">
+              -
+            </div>
+            <div class="select cursor-pointer" @click="zoom('in')">
+              +
+            </div>
+            <div class="select cursor-pointer" @click="game.debug = !game.debug">
               SELECT
             </div>
-            <div class="start">
+            <div class="start cursor-pointer">
               START
             </div>
           </div>
@@ -105,6 +111,7 @@
         </div>
         <div v-if="game.showStats" class="debug flex flex-col">
           <pre class="pt-4 whitespace-pre-wrap">{{ debug('player') }}</pre>
+          <pre class="pt-4 whitespace-pre-wrap">{{ debug('game') }}</pre>
           <pre class="pt-4 whitespace-pre-wrap">{{ debug('map') }}</pre>
         </div>
       </div>
@@ -117,7 +124,7 @@ import { get } from 'lodash'
 const tileSize = 32
 const blockSize = 512
 const blockCount = 16
-const playerBoundaryOffset = 6
+const playerBoundaryOffset = 4
 export default {
   name: 'Game',
   data() {
@@ -132,8 +139,6 @@ export default {
         width: blockCount - 1,
         x: 0,
         y: 0,
-        playerXBoundaryOffset: tileSize * playerBoundaryOffset,
-        playerYBoundaryOffset: tileSize * playerBoundaryOffset,
         blockX: 0,
         blockY: 0,
         lat: null,
@@ -141,6 +146,8 @@ export default {
       },
       game: {
         scale: 1,
+        zoom: 1,
+        zoomScale: 1,
         regenerate: false,
         anyLoaded: false,
         canvasWidth: 512,
@@ -156,6 +163,10 @@ export default {
         blockHeight: tileSize * blockCount,
         playerXBoundaryOffset: tileSize * playerBoundaryOffset,
         playerYBoundaryOffset: tileSize * playerBoundaryOffset,
+        coords: {
+          latitude: null,
+          longitude: null
+        },
         tileSize,
         blockSize,
         tileBrowser: false,
@@ -183,12 +194,18 @@ export default {
   watch: {
     game: {
       handler() {
-        this.$store.commit('things/thing', {
-          key: 'game',
-          value: JSON.parse(JSON.stringify(this.game))
-        })
+        if (this.game.initialized) {
+          this.$store.commit('things/thing', {
+            key: 'game',
+            value: JSON.parse(JSON.stringify(this.game))
+          })
+        }
       },
       deep: true
+    },
+    'game.zoom'() {
+      this.game.zoomScale = this.game.canvasWidth / (this.game.canvasWidth * this.game.zoom)
+      this.getBlocks()
     },
     'game.regenerate'() {
       if (this.game.regenerate && this.game.initialized) {
@@ -198,19 +215,23 @@ export default {
     },
     map: {
       handler() {
-        this.$store.commit('things/thing', {
-          key: 'map',
-          value: JSON.parse(JSON.stringify(this.map))
-        })
+        if (this.map.initialized) {
+          this.$store.commit('things/thing', {
+            key: 'map',
+            value: JSON.parse(JSON.stringify(this.map))
+          })
+        }
       },
       deep: true
     },
     player: {
       handler() {
-        this.$store.commit('things/thing', {
-          key: 'player',
-          value: JSON.parse(JSON.stringify(this.player))
-        })
+        if (this.player.initialized) {
+          this.$store.commit('things/thing', {
+            key: 'player',
+            value: JSON.parse(JSON.stringify(this.player))
+          })
+        }
       },
       deep: true
     },
@@ -239,6 +260,7 @@ export default {
     }
   },
   async mounted() {
+    await this.getLocation()
     await this.initializeGame()
     await this.initializeMap()
     await this.initializePlayer()
@@ -254,8 +276,8 @@ export default {
 
     // PLAYER
     updatePlayerBlock() {
-      this.player.blockX = Math.floor(this.player.x / 512)
-      this.player.blockY = Math.floor(this.player.y / 512)
+      this.player.blockX = Math.floor(this.player.x / this.game.blockSize)
+      this.player.blockY = Math.floor(this.player.y / this.game.blockSize)
       const blocks = Object.values(this.blockDb)
       for (const block of blocks) {
         if (block.x === this.player.blockX && block.y === this.player.blockY) {
@@ -272,11 +294,12 @@ export default {
       if (storedPlayer && storedPlayer.x && storedPlayer.y) {
         console.log('Found stored player', storedPlayer.x, storedPlayer.y)
         delete storedPlayer.initialized
-        Object.assign(this.player, storedPlayer)
+        // Object.assign(this.player, storedPlayer)
       } else {
-        this.player.x = this.map.x + ((this.game.blockCount / 2) * this.game.tileSize)
-        this.player.y = this.map.y + ((this.game.blockCount / 2) * this.game.tileSize)
+        // do something
       }
+      this.player.x = this.map.x + ((this.game.blockCount / 2) * this.game.tileSize)
+      this.player.y = this.map.y + ((this.game.blockCount / 2) * this.game.tileSize)
       this.updatePlayerBlock()
       console.log('Player initialization getting blocks')
       this.getBlocks()
@@ -300,7 +323,7 @@ export default {
       })
     },
     moveRight() {
-      const mapXRightCutoff = this.map.x + (this.game.blockWidth - this.game.playerXBoundaryOffset)
+      const mapXRightCutoff = this.map.x + ((this.game.canvasWidth * this.game.zoom) - this.game.playerXBoundaryOffset)
       if (this.player.x >= mapXRightCutoff) {
         this.map.x += this.game.tileSize
       }
@@ -314,7 +337,7 @@ export default {
       this.player.x = this.player.x - this.game.tileSize
     },
     moveUp() {
-      const mapYUpCutoff = this.map.y + (this.game.blockWidth - this.game.playerYBoundaryOffset)
+      const mapYUpCutoff = this.map.y + ((this.game.canvasHeight * this.game.zoom) - this.game.playerYBoundaryOffset)
       if (this.player.y >= mapYUpCutoff) {
         this.map.y += this.game.tileSize
       }
@@ -330,12 +353,10 @@ export default {
     action(action) {
       if (this.player.lastAction && Date.now() - this.player.lastAction < 300) {
         if (!this.player.queuedAction) {
-          console.log('queueing action')
           this.player.queuedAction = action
         }
         return
       }
-      console.log('playing action')
       delete this.player.queuedAction
       this.player.lastAction = Date.now()
       this[action]()
@@ -360,12 +381,14 @@ export default {
     async initializeMap() {
       const storedMap = JSON.parse(JSON.stringify(this.$store.state.things.map))
       if (storedMap && storedMap.x && storedMap.y && storedMap.blockX && storedMap.blockY) {
-        Object.assign(this.map, storedMap)
-      } else {
+        // Object.assign(this.map, storedMap)
+      }
+      if (this.game.coords) {
+        console.log('game coords', this.game.coords)
         const resp = await this.$axios.get(process.env.API + '/blockLatLng', {
           params: {
-            lng: 145.00569971273293,
-            lat: -37.87569351417865
+            lng: this.game.coords.longitude,
+            lat: this.game.coords.latitude
           }
         }).catch(err => console.error(err))
         console.log('resp', resp)
@@ -390,6 +413,10 @@ export default {
       if (storedGame) {
         delete storedGame.initialized
         delete storedGame.anyLoaded
+        delete storedGame.playerXBoundaryOffset
+        delete storedGame.playerYBoundaryOffset
+        delete storedGame.coords
+        console.log('Setting zoom to', storedGame.zoom)
         Object.assign(this.game, storedGame)
       }
       this.$nextTick(() => {
@@ -405,17 +432,47 @@ export default {
         this.resizeGame()
       })
     },
+    getLocation() {
+      if (navigator.geolocation) {
+        return new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition((position) => {
+            this.game.coords.latitude = position.coords.latitude
+            this.game.coords.longitude = position.coords.longitude
+            resolve({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            })
+          }, (err) => {
+            console.error(err)
+            resolve()
+          })
+        })
+      } else {
+        return false
+      }
+    },
     resizeGame() {
-      if (window.innerWidth > (2 * this.game.canvasWidth) * 1.2) {
+      if (window.innerWidth > (2 * (this.game.canvasWidth)) * 1.2) {
         // do nothing
         this.game.columns = 2
         this.game.scale = 1
-      } else if (window.innerWidth > this.game.canvasWidth * 1.2) {
+      } else if (window.innerWidth > (this.game.canvasWidth) * 1.2) {
         this.game.columns = 1
         this.game.scale = 1
       } else {
         this.game.columns = 1
-        this.game.scale = (window.innerWidth / this.game.canvasWidth) * 0.91
+        this.game.scale = (window.innerWidth / (this.game.canvasWidth * this.game.zoom)) * 0.91
+      }
+    },
+    zoom(zoom) {
+      if (zoom === 'in') {
+        this.game.zoom = (this.game.zoom / (this.game.canvasWidth * this.game.zoom)) * ((this.game.canvasWidth * this.game.zoom) - (this.game.tileSize * 2))
+        this.map.x += 32
+        this.map.y += 32
+      } else if (zoom === 'out') {
+        this.game.zoom = (1 / this.game.canvasWidth) * ((this.game.canvasWidth * this.game.zoom) + (this.game.tileSize * 2))
+        this.map.x -= 32
+        this.map.y -= 32
       }
     },
     renderCanvas() {
@@ -442,7 +499,11 @@ export default {
               const imageTile = this.storedImages[imageTileKey]
               if (imageTile?.loaded) {
                 try {
-                  layer1.getContext('2d').drawImage(imageTile.imgEl, x * this.game.scale, this.convertY(y) * this.game.scale, this.game.tileSize * this.game.scale, this.game.tileSize * this.game.scale)
+                  const xpx = (this.game.tileSize * this.game.scale) * this.game.zoomScale
+                  const ypx = (this.game.tileSize * this.game.scale) * this.game.zoomScale
+                  const xx = (x * this.game.scale) * this.game.zoomScale
+                  const yy = this.convertY(y, ypx)
+                  layer1.getContext('2d').drawImage(imageTile.imgEl, xx, yy, xpx, ypx)
                 } catch {
                 }
               }
@@ -452,20 +513,13 @@ export default {
               const image2Tile = this.storedImages[image2TileKey]
               if (image2Tile?.loaded) {
                 try {
-                  canvas.getContext('2d').drawImage(image2Tile.imgEl, x * this.game.scale, this.convertY(y) * this.game.scale, this.game.tileSize * this.game.scale, this.game.tileSize * this.game.scale)
+                  const xpx = (this.game.tileSize * this.game.scale) * this.game.zoomScale
+                  const ypx = (this.game.tileSize * this.game.scale) * this.game.zoomScale
+                  const xx = (x * this.game.scale) * this.game.zoomScale
+                  const yy = this.convertY(y, ypx)
+                  canvas.getContext('2d').drawImage(image2Tile.imgEl, xx, yy, xpx, ypx)
                 } catch {
                 }
-              }
-            }
-            const imageGmapKey = this.images.indexOf(tile.image)
-            if (imageGmapKey >= 0) {
-              const imageGmap = this.storedImages[imageGmapKey]
-              if (imageGmap?.loaded) {
-                // try {
-                gMapCanvas.getContext('2d').drawImage(imageGmap.imgEl, x * this.game.scale, this.convertY(y) * this.game.scale, this.game.tileSize * this.game.scale, this.game.tileSize * this.game.scale)
-                // } catch {
-                //   console.error('something went wrong')
-                // }
               }
             }
           }
@@ -478,13 +532,17 @@ export default {
         for (const block of blocks) {
           if (this.blockShouldRender(block)) {
             const x = (block.mapX - this.map.x)
-            const y = ((block.mapY + (512 - 32)) - this.map.y) // ? not sure why you need to 512-32
+            const y = (block.mapY - this.map.y)
             const imageBlockKey = this.images.indexOf(block.googleMap)
             if (imageBlockKey >= 0) {
               const imageBlock = this.storedImages[imageBlockKey]
               if (imageBlock?.loaded) {
                 try {
-                  gMapCanvas.getContext('2d').drawImage(imageBlock.imgEl, x * this.game.scale, this.convertY(y) * this.game.scale, this.game.blockSize * this.game.scale, this.game.blockSize * this.game.scale)
+                  const xpx = (this.game.blockSize * this.game.scale) * this.game.zoomScale
+                  const ypx = (this.game.blockSize * this.game.scale) * this.game.zoomScale
+                  const xx = (x * this.game.scale) * this.game.zoomScale
+                  const yy = this.convertY(y, ypx)
+                  gMapCanvas.getContext('2d').drawImage(imageBlock.imgEl, xx, yy, xpx, ypx)
                 } catch {
                 }
               }
@@ -503,9 +561,13 @@ export default {
               const x = (this.player.x - this.map.x)
               const y = (this.player.y - this.map.y)
 
-              canvas.getContext('2d').drawImage(image.imgEl, (x + 2) * this.game.scale, this.convertY(y + 10) * this.game.scale, 28 * this.game.scale, 42 * this.game.scale)
-              gMapCanvas.getContext('2d').drawImage(image.imgEl, (x + 2) * this.game.scale, this.convertY(y + 10) * this.game.scale, 28 * this.game.scale, 42 * this.game.scale)
-              layer1.getContext('2d').drawImage(image.imgEl, (x + 2) * this.game.scale, this.convertY(y + 10) * this.game.scale, 28 * this.game.scale, 42 * this.game.scale)
+              const xx = ((x + 2) * this.game.scale) * this.game.zoomScale
+              const xpx = (28 * this.game.scale) * this.game.zoomScale
+              const ypx = (42 * this.game.scale) * this.game.zoomScale
+              const yy = this.convertY(y, ypx)
+              canvas.getContext('2d').drawImage(image.imgEl, xx, yy, xpx, ypx)
+              gMapCanvas.getContext('2d').drawImage(image.imgEl, xx, yy, xpx, ypx)
+              layer1.getContext('2d').drawImage(image.imgEl, xx, yy, xpx, ypx)
             } catch {
             }
           }
@@ -529,13 +591,13 @@ export default {
       let yValid = false
 
       if (
-        tile.mapX >= this.map.x && tile.mapX < (this.map.x + 512)
+        tile.mapX >= this.map.x && tile.mapX < (this.map.x + (this.game.canvasWidth * this.game.zoom))
       ) {
         xValid = true
       }
 
       if (
-        tile.mapY >= this.map.y && tile.mapY < (this.map.y + 512)
+        tile.mapY >= this.map.y && tile.mapY < (this.map.y + (this.game.canvasWidth * this.game.zoom))
       ) {
         yValid = true
       }
@@ -563,28 +625,30 @@ export default {
 
       return xValid && yValid
     },
-    convertY(y) {
-      return (this.game.tileSize * 15) - y
+    convertY(y, scaledHeight) {
+      return (((this.game.canvasHeight * this.game.zoom) - y) * this.game.scale * this.game.zoomScale) - scaledHeight
     },
     async getBlocks() {
       console.log('Maybe getting blocks')
       if (this.player.blockX && this.player.blockY) {
         let count = 0
+        const offsetLimit = Math.ceil(2 * (this.game.zoom / 1.5))
         const offsets = [
-          [0, 0],
-          [1, 0],
-          [0, 1],
-          [1, 1],
-          [-1, 0],
-          [0, -1],
-          [-1, -1],
-          [1, -1],
-          [-1, 1],
-          [2, 0],
-          [0, 2],
-          [-2, 0],
-          [0, -2]
         ]
+        for (const x of Array(offsetLimit).keys()) {
+          for (const y of Array(offsetLimit).keys()) {
+            offsets.push([x, y])
+            if (x !== 0) {
+              offsets.push([-x, y])
+            }
+            if (y !== 0) {
+              offsets.push([x, -y])
+            }
+            if (x !== 0 && y !== 0) {
+              offsets.push([-x, -y])
+            }
+          }
+        }
         const offsetsToQuery = []
         for (const offset of offsets) {
           if (this.game.regenerate || !this.queries[(this.player.blockX + offset[0]) + ',' + (this.player.blockY + offset[1])]) {
@@ -902,6 +966,7 @@ export default {
   .select, .start {
     display:inline-block;
     color:#6b67ed;
+    cursor: pointer;
     text-shadow:0px -1px 0px #3436bf;
     letter-spacing:-1px;
     width:60px;
@@ -921,9 +986,10 @@ export default {
       background-repeat:no-repeat;
       border:2px solid #0b0a1c;
       box-shadow:0px -2px 1px #8482e9;
-      cursor:pointer;
+      cursor: pointer;
     }
     &:active::before {
+      cursor: pointer;
       background:linear-gradient(to bottom, #0b0a1c 0%, #0b0a1c 50%, #62636c 100%);
     }
   }
