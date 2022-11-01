@@ -1,6 +1,9 @@
 <template>
   <div class="w-full flex flex-col items-center justify-center pb-12">
-    <div v-if="!game.anyLoaded" class="w-full flex flex-col items-center justify-center">
+    <div v-if="locationError" class="text-center text-red">
+      This game does not work without location access, please enable location services and reload the page.
+    </div>
+    <div v-else-if="!game.anyLoaded" class="w-full flex flex-col items-center justify-center">
       <div class="loading-container">
         <img src="/loading.gif">
       </div>
@@ -134,6 +137,7 @@ export default {
       tileDb: {},
       tileHistoryDb: {},
       queries: {},
+      locationError: false,
       storedImages: {},
       map: {
         width: blockCount - 1,
@@ -444,6 +448,7 @@ export default {
             })
           }, (err) => {
             console.error(err)
+            this.locationError = true
             resolve()
           })
         })
