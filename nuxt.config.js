@@ -35,7 +35,9 @@ export default {
     ],
     script: [
       ...(scripts || [])
-    ]
+    ],
+    __dangerouslyDisableSanitizers: ['script']
+
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
