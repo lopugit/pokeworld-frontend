@@ -5,12 +5,12 @@ const scripts = process.env.ENV === 'prod'
     },
     {
       innerHTML: `
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
 
-        gtag('config', 'G-DF2PLWNTLW');
-      `
+          gtag('config', 'G-DF2PLWNTLW');
+        `
     }
   ]
   : []
@@ -25,7 +25,7 @@ export default {
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    title: 'pokeworld-frontend',
+    title: 'Pokémon World',
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
