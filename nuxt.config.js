@@ -1,3 +1,20 @@
+const scripts = process.env.ENV === 'prod'
+  ? [
+    {
+      src: 'https://www.googletagmanager.com/gtag/js?id=G-DF2PLWNTLW'
+    },
+    {
+      innerHTML: `
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-DF2PLWNTLW');
+      `
+    }
+  ]
+  : []
+
 export default {
   // Target: https://go.nuxtjs.dev/config-target
   target: 'static',
@@ -17,6 +34,9 @@ export default {
     ],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+    ],
+    script: [
+      ...scripts
     ]
   },
 
