@@ -461,7 +461,7 @@ export default {
         this.game.scale = 1
       } else {
         this.game.columns = 1
-        this.game.scale = (window.innerWidth / (this.game.canvasWidth * this.game.zoom)) * 0.91
+        this.game.scale = (window.innerWidth / (this.game.canvasWidth)) * 0.91
       }
     },
     zoom(zoom) {
