@@ -150,8 +150,8 @@ export default {
       },
       game: {
         scale: 1,
-        zoom: 1,
-        zoomScale: 1,
+        zoom: 1.25,
+        zoomScale: 0.8,
         regenerate: false,
         anyLoaded: false,
         canvasWidth: 512,
