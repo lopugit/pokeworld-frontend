@@ -470,14 +470,51 @@ export default {
       }
     },
     zoom(zoom) {
-      if (zoom === 'in') {
+      if (zoom === 'in' && this.game.zoom > 0.75) {
         this.game.zoom = (this.game.zoom / (this.game.canvasWidth * this.game.zoom)) * ((this.game.canvasWidth * this.game.zoom) - (this.game.tileSize * 2))
-        this.map.x += 32
-        this.map.y += 32
-      } else if (zoom === 'out') {
+        this.centreMap(zoom)
+      } else if (zoom === 'out' && this.game.zoom < 3) {
         this.game.zoom = (1 / this.game.canvasWidth) * ((this.game.canvasWidth * this.game.zoom) + (this.game.tileSize * 2))
-        this.map.x -= 32
-        this.map.y -= 32
+        this.centreMap(zoom)
+      }
+    },
+    centreMap(zoom) {
+      // if playerX in centre
+      const mapXLowerCutoff = this.map.x + ((this.game.canvasWidth * this.game.zoom) / 2) - 32
+      const mapXUpperCutoff = this.map.x + ((this.game.canvasWidth * this.game.zoom) / 2) + 64
+      if (this.player.x >= mapXLowerCutoff && this.player.x < mapXUpperCutoff) {
+        console.log('player detected in x center')
+        if (zoom === 'in') {
+          this.map.x += this.game.tileSize
+        } else {
+          this.map.x -= this.game.tileSize
+        }
+      } else if (this.player.x < (this.map.x + ((this.game.canvasWidth * this.game.zoom) / 2))) {
+        console.log('player detected left of center')
+        this.map.x -= 64
+      } else {
+        console.log('player detected right of center')
+        this.map.x += 64
+      }
+
+      const mapYLowerCutoff = this.map.y + ((this.game.canvasHeight * this.game.zoom) / 2) - 32
+      const mapYUpperCutoff = this.map.y + ((this.game.canvasHeight * this.game.zoom) / 2) + 64
+
+      console.log('coords 2', mapXLowerCutoff, this.player.x, mapXUpperCutoff, '-', mapYLowerCutoff, this.player.y, mapYUpperCutoff)
+
+      if (this.player.y >= mapYLowerCutoff && this.player.y < mapYUpperCutoff) {
+        console.log('player detected in y center')
+        if (zoom === 'in') {
+          this.map.y += this.game.tileSize
+        } else {
+          this.map.y -= this.game.tileSize
+        }
+      } else if (this.player.y < (this.map.y + ((this.game.canvasHeight * this.game.zoom) / 2))) {
+        console.log('player detected below center')
+        this.map.y -= 64
+      } else {
+        console.log('player detected above center')
+        this.map.y += 64
       }
     },
     renderCanvas() {
@@ -637,7 +674,8 @@ export default {
       console.log('Maybe getting blocks')
       if (this.player.blockX && this.player.blockY) {
         let count = 0
-        const offsetLimit = Math.ceil(2 * (this.game.zoom / 1.5))
+        const maybeOffsetLimit = Math.ceil(2 * (this.game.zoom / 2))
+        const offsetLimit = maybeOffsetLimit < 2 ? 2 : maybeOffsetLimit
         const offsets = [
         ]
         for (const x of Array(offsetLimit).keys()) {
@@ -663,7 +701,7 @@ export default {
           }
         }
         if (offsetsToQuery.length) {
-          console.log('Getting blocks')
+          console.log('Getting', offsetsToQuery.length, 'blocks')
           const startTime = Date.now()
           console.log('Sending request for block', (this.player.blockX) + ',' + (this.player.blockY))
           let cc = 0
