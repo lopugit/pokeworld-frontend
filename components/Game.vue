@@ -77,7 +77,7 @@
           <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.showStats = !game.showStats">
             Stats {{ game.showStats ? 'On' : 'Off' }}
           </div>
-          <div class="py-2 px-8 mb-4 bg-grass text-white cursor-pointer" @click="game.zoomMode = !game.zoomMode">
+          <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.zoomMode = !game.zoomMode">
             Zoom Mode {{ game.zoomMode ? 'On' : 'Off' }}
           </div>
           <div class="py-2 px-8 mb-4 bg-grass text-white cursor-pointer" @click="resetGame">
