@@ -63,19 +63,22 @@
       <div v-if="game.debug" class="flex flex-col">
         <div class="flex flex-row items-center justify-center flex-wrap pt-8">
           <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.regenerate = !game.regenerate">
-            Turn Regenerate {{ game.regenerate ? 'Off' : 'On' }}
+            Regenerate {{ game.regenerate ? 'On' : 'Off' }}
           </div>
           <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.tileBrowser = !game.tileBrowser">
-            {{ game.tileBrowser ? 'Disable' : 'Enable' }} Tile Browser
+            Tile Browser {{ game.tileBrowser ? 'On' : 'Off' }}
           </div>
           <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.showLayer1 = !game.showLayer1">
-            Toggle Layer 1
+            Layer 1 {{ game.showLayer1 ? 'On' : 'Off' }}
           </div>
           <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.showLayerGmap = !game.showLayerGmap">
-            Toggle Gmap
+            Gmap {{ game.showLayerGmap ? 'On' : 'Off' }}
           </div>
-          <div class="py-2 px-8 mb-4 bg-grass text-white cursor-pointer" @click="game.showStats = !game.showStats">
-            Toggle Stats
+          <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.showStats = !game.showStats">
+            Stats {{ game.showStats ? 'On' : 'Off' }}
+          </div>
+          <div class="py-2 px-8 mb-4 bg-grass text-white cursor-pointer" @click="game.zoomMode = !game.zoomMode">
+            Zoom Mode {{ game.zoomMode ? 'On' : 'Off' }}
           </div>
         </div>
         <div v-if="game.tileBrowser">
@@ -150,6 +153,7 @@ export default {
       },
       game: {
         scale: 1,
+        zoomMode: false,
         zoom: 1.25,
         zoomScale: 0.8,
         regenerate: false,
@@ -299,11 +303,13 @@ export default {
         console.log('Found stored player', storedPlayer.x, storedPlayer.y)
         delete storedPlayer.initialized
         // Object.assign(this.player, storedPlayer)
+        this.player.x = storedPlayer.x
+        this.player.y = storedPlayer.y
       } else {
         // do something
+        this.player.x = this.map.x + ((this.game.blockCount / 2) * this.game.tileSize)
+        this.player.y = this.map.y + ((this.game.blockCount / 2) * this.game.tileSize)
       }
-      this.player.x = this.map.x + ((this.game.blockCount / 2) * this.game.tileSize)
-      this.player.y = this.map.y + ((this.game.blockCount / 2) * this.game.tileSize)
       this.updatePlayerBlock()
       console.log('Player initialization getting blocks')
       this.getBlocks()
@@ -329,30 +335,30 @@ export default {
     moveRight() {
       const mapXRightCutoff = this.map.x + ((this.game.canvasWidth * this.game.zoom) - this.game.playerXBoundaryOffset)
       if (this.player.x >= mapXRightCutoff) {
-        this.map.x += this.game.tileSize
+        this.map.x += (this.game.tileSize * (this.game.zoomMode ? 8 : 1))
       }
-      this.player.x = this.player.x + this.game.tileSize
+      this.player.x = this.player.x + (this.game.tileSize * (this.game.zoomMode ? 8 : 1))
     },
     moveLeft() {
       const mapXLeftCutoff = this.map.x + this.game.playerXBoundaryOffset
       if (this.player.x < mapXLeftCutoff) {
-        this.map.x -= this.game.tileSize
+        this.map.x -= (this.game.tileSize * (this.game.zoomMode ? 8 : 1))
       }
-      this.player.x = this.player.x - this.game.tileSize
+      this.player.x = this.player.x - (this.game.tileSize * (this.game.zoomMode ? 8 : 1))
     },
     moveUp() {
       const mapYUpCutoff = this.map.y + ((this.game.canvasHeight * this.game.zoom) - this.game.playerYBoundaryOffset)
       if (this.player.y >= mapYUpCutoff) {
-        this.map.y += this.game.tileSize
+        this.map.y += (this.game.tileSize * (this.game.zoomMode ? 8 : 1))
       }
-      this.player.y = this.player.y + this.game.tileSize
+      this.player.y = this.player.y + (this.game.tileSize * (this.game.zoomMode ? 8 : 1))
     },
     moveDown() {
       const mapYDownCutoff = this.map.y + this.game.playerYBoundaryOffset
       if (this.player.y < mapYDownCutoff) {
-        this.map.y -= this.game.tileSize
+        this.map.y -= (this.game.tileSize * (this.game.zoomMode ? 8 : 1))
       }
-      this.player.y = this.player.y - this.game.tileSize
+      this.player.y = this.player.y - (this.game.tileSize * (this.game.zoomMode ? 8 : 1))
     },
     action(action) {
       if (this.player.lastAction && Date.now() - this.player.lastAction < 300) {
@@ -385,9 +391,9 @@ export default {
     async initializeMap() {
       const storedMap = JSON.parse(JSON.stringify(this.$store.state.things.map))
       if (storedMap && storedMap.x && storedMap.y && storedMap.blockX && storedMap.blockY) {
-        // Object.assign(this.map, storedMap)
-      }
-      if (this.game.coords) {
+        delete storedMap.initialized
+        Object.assign(this.map, storedMap)
+      } else if (this.game.coords) {
         console.log('game coords', this.game.coords)
         const resp = await this.$axios.get(process.env.API + '/blockLatLng', {
           params: {
@@ -403,6 +409,9 @@ export default {
           this.map.y = resp.data.block.y * this.game.blockHeight
         }
       }
+      this.$nextTick(() => {
+        this.map.initialized = true
+      })
     },
     updateMapBlock() {
       this.map.blockX = this.player.blockX
