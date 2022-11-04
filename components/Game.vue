@@ -80,6 +80,9 @@
           <div class="py-2 px-8 mb-4 bg-grass text-white cursor-pointer" @click="game.zoomMode = !game.zoomMode">
             Zoom Mode {{ game.zoomMode ? 'On' : 'Off' }}
           </div>
+          <div class="py-2 px-8 mb-4 bg-grass text-white cursor-pointer" @click="resetGame">
+            Reset
+          </div>
         </div>
         <div v-if="game.tileBrowser">
           <div class="flex flex-row">
@@ -421,6 +424,14 @@ export default {
     },
 
     // GAME
+    resetGame() {
+      try {
+        window.localStorage.clear()
+        window.location.reload()
+      } catch {
+
+      }
+    },
     initializeGame() {
       const storedGame = JSON.parse(JSON.stringify(this.$store.state.things.game))
       if (storedGame) {
