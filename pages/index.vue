@@ -15,7 +15,7 @@
       title="Lopu Designs"
       :descriptions="[
         'A Full-Stack developer passionate about Pokémon and AR',
-        'Nikolaj (lopu) started developing the Pokémon World since 2020',
+        'Nikolaj (lopu) has been developing the Pokémon World since 2020',
         'Starting with a mapping algorithm for converting Google maps data into Pokémon sprite based tile maps, and then working on the fundamental Pokémon game mechanics like battling, leveling, and breeding',
         'To work on the game with us, visit the Github link below'
       ]"
