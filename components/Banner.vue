@@ -2,7 +2,7 @@
   <div class="w-full flex flex-col md:flex-row py-16 items-center justify-center">
     <div
       v-if="image"
-      class="w-full md:w-6/12 flex items-center justify-center"
+      class="w-full md:w-6/12 px-8 md:px-16 flex items-center justify-center"
       :class="{
         'md:order-2': swap,
       }"
@@ -20,12 +20,12 @@
         'items-center': !image
       }"
     >
-      <div v-if="tagline" class="text-4xl -mb-4 font-bold text-black">
+      <div v-if="tagline" class="text-4xl -mb-4 font-bold text-grass">
         {{ tagline }}
       </div>
       <div
         v-if="title"
-        class="text-6xl font-bold text-black"
+        class="text-6xl font-bold text-grass2 leading-none"
         :class="{
           'text-center': !image
         }"
@@ -40,11 +40,11 @@
           {{ description }}
         </div>
       </div>
-      <div v-if="keywords" class="text-grass font-bold text-sm pt-6">
+      <div v-if="keywords" class="text-grass3 font-bold text-sm pt-6">
         {{ keywords }}
       </div>
-      <div v-if="links?.length" class="text-black font-bold text-sm pt-6 flex flex-row">
-        <a v-for="(link, key) in links" :key="key" target="_blank" class="pb-2 text-grass pr-2 text-lg" :href="link.link">{{ link.text }}{{ key !== links.length-1 ? ', ' : '' }} </a>
+      <div v-if="links?.length" class="text-grass3 font-bold text-sm pt-6 flex flex-row">
+        <a v-for="(link, key) in links" :key="key" target="_blank" class="pb-2 pr-2 text-lg" :href="link.link">{{ link.text }}{{ key !== links.length-1 ? ', ' : '' }} </a>
       </div>
     </div>
   </div>

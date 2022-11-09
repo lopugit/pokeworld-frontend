@@ -2,8 +2,8 @@
   <div>
     <Banner
       image="/bannerPic1.png"
-      tagline="Introducing"
-      title="The Pokémon World"
+      tagline="Introducing the"
+      title="Pokémon World"
       description="The first AR Pokémon game based on traditional Pokémon play style"
       keywords="fun, pokémon, augmented reality, AR, game, play, pokémon world"
     />
@@ -11,7 +11,7 @@
       image="/lopudesigns.jpeg"
       :image-circle="true"
       swap
-      tagline="Built By"
+      tagline="Built by"
       title="Lopu Designs"
       :descriptions="[
         'A Full-Stack developer passionate about Pokémon and AR',
@@ -39,9 +39,15 @@
       ]"
     />
     <Banner
-      title="Login or Register to Play"
+      title="Click to Play"
+      :links="[
+        {
+          text: 'Play Now',
+          link: '/game'
+        }
+      ]"
     />
-    <LoginRegister />
+    <!-- <LoginRegister /> -->
   </div>
 </template>
 

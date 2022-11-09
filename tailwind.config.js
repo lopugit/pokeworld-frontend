@@ -86,17 +86,13 @@ const tailwindConf = {
         bold: 700
       }
     },
-    lineHeight: {
-      none: 1,
-      tight: 1.17,
-      snug: 1.3,
-      normal: 1.35,
-      relaxed: 1.4
-    },
     colors: {
       red: '#FF0000',
       green: '#B2F594',
-      grass: '#25C189',
+      // grass: '#25C189',
+      grass: '#70C0A0',
+      grass2: '#2AA26D',
+      grass3: '#277A37',
       black: '#181818',
       white: '#ffffff',
       gameboy: {
