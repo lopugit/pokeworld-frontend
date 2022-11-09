@@ -726,7 +726,7 @@ export default {
           console.log('Sending request for block', (this.player.blockX) + ',' + (this.player.blockY))
           let cc = 0
           const uniqueUuids = []
-          const resp = await this.$axios.get(process.env.API + '/batchBlocks', {
+          const resp = await this.$axios.get(process.env.API + '/blocks', {
             params: {
               // regenerate: true,
               regenerate: this.game.regenerate,
@@ -736,29 +736,38 @@ export default {
             }
           }).catch(err => console.error(err))
 
-          if (get(resp, 'data.tiles')) {
+          if (get(resp, 'data.blocks')) {
             setTimeout(() => {
               this.game.anyLoaded = true
             }, 500)
-            console.log('Got', resp.data.tiles.length, 'tiles for block', (this.player.blockX) + ',' + (this.player.blockY))
-            for (const tile of resp.data.tiles) {
-              if (!uniqueUuids.includes(tile.uuid)) {
-                uniqueUuids.push(tile.uuid)
+
+            console.log('Got', resp.data.blocks.length, 'blocks for block', (this.player.blockX) + ',' + (this.player.blockY))
+
+            const tiles = resp.data.blocks.reduce((acc, block) => {
+              return acc.concat(block.tiles)
+            }, [])
+
+            console.log('Got', tiles.length, 'tiles for block', (this.player.blockX) + ',' + (this.player.blockY))
+            for (const tile of tiles) {
+              if (tile) {
+                if (!uniqueUuids.includes(tile.uuid)) {
+                  uniqueUuids.push(tile.uuid)
+                }
+                if (
+                  (this.tileDb[tile.uuid] && this.tileDb[tile.uuid].updated < tile.updated) ||
+                !this.tileDb[tile.uuid]?.updated
+                ) {
+                  cc++
+                  this.tileDb[tile.uuid] = tile
+                } else if (!this.tileDb[tile.uuid]) {
+                  cc++
+                  this.tileDb[tile.uuid] = tile
+                }
+                if (!this.tileHistoryDb[tile.uuid]) {
+                  this.tileHistoryDb[tile.uuid] = []
+                }
+                this.tileHistoryDb[tile.uuid].push(tile)
               }
-              if (
-                (this.tileDb[tile.uuid] && this.tileDb[tile.uuid].updated < tile.updated) ||
-              !this.tileDb[tile.uuid]?.updated
-              ) {
-                cc++
-                this.tileDb[tile.uuid] = tile
-              } else if (!this.tileDb[tile.uuid]) {
-                cc++
-                this.tileDb[tile.uuid] = tile
-              }
-              if (!this.tileHistoryDb[tile.uuid]) {
-                this.tileHistoryDb[tile.uuid] = []
-              }
-              this.tileHistoryDb[tile.uuid].push(tile)
             }
             this.storeTileData()
             for (const block of resp?.data?.blocks || []) {
