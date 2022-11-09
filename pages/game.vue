@@ -3,3 +3,8 @@
     <Game />
   </div>
 </template>
+<script>
+export default {
+  layout: 'game'
+}
+</script>
