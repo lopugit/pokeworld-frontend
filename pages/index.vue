@@ -8,6 +8,15 @@
       keywords="fun, pokémon, augmented reality, AR, game, play, pokémon world"
     />
     <Banner
+      title="Click to Play"
+      :links="[
+        {
+          text: 'Play Now',
+          link: '/game'
+        }
+      ]"
+    />
+    <Banner
       image="/lopudesigns.jpeg"
       :image-circle="true"
       swap
@@ -35,15 +44,6 @@
         {
           text: 'Github',
           link: 'https://github.com/lopugit/pokeworld-frontend'
-        }
-      ]"
-    />
-    <Banner
-      title="Click to Play"
-      :links="[
-        {
-          text: 'Play Now',
-          link: '/game'
         }
       ]"
     />

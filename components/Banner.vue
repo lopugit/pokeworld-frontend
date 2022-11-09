@@ -1,8 +1,8 @@
 <template>
-  <div class="w-full flex flex-col md:flex-row py-16 items-center justify-center">
+  <div class="w-full flex flex-col md:flex-row py-12 md:py-16 items-center justify-center">
     <div
       v-if="image"
-      class="w-full md:w-6/12 px-8 md:px-16 flex items-center justify-center"
+      class="w-full md:w-6/12 px-8 md:px-16 pb-12 flex items-center md:justify-center"
       :class="{
         'md:order-2': swap,
       }"
