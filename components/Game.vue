@@ -10,6 +10,9 @@
       <div class="text-lg text-grass">
         Loading..
       </div>
+      <div class="px-4 py-2 cursor-pointer mt-5 text-white bg-grass rounded-md" @click="resetGame">
+        Reset
+      </div>
     </div>
     <div v-else class="w-full flex flex-col items-center justify-center">
       <div
