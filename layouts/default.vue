@@ -2,7 +2,7 @@
   <div class="w-full bg-green min-h-screen pb-16">
     <Nav />
     <div class="w-full flex items-center justify-center">
-      <div class="container px-4">
+      <div class="container px-2 md:px-4">
         <nuxt />
       </div>
     </div>
