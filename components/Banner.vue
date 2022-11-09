@@ -44,7 +44,12 @@
         {{ keywords }}
       </div>
       <div v-if="links?.length" class="text-grass3 font-bold text-sm pt-6 flex flex-row">
-        <a v-for="(link, key) in links" :key="key" target="_blank" class="pb-2 pr-2 text-lg" :href="link.link">{{ link.text }}{{ key !== links.length-1 ? ', ' : '' }} </a>
+        <template v-if="links.length > 1">
+          <a v-for="(link, key) in links" :key="key" target="_blank" class="pb-2 pr-2 text-lg" :href="link.link">{{ link.text }}{{ key !== links.length-1 ? ', ' : '' }} </a>
+        </template>
+        <template v-else>
+          <a v-for="(link, key) in links" :key="key" target="_blank" class="py-2 px-5 bg-grass2 text-white rounded-md text-lg" :href="link.link">{{ link.text }}{{ key !== links.length-1 ? ', ' : '' }} </a>
+        </template>
       </div>
     </div>
   </div>
