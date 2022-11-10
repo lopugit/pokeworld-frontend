@@ -92,10 +92,10 @@
             <div class="flex-col mr-2">
               <input v-model.number="game.tileBrowserX" placeholder="map X" class="py-2 px-4">
               <div class="flex pt-2">
-                <div class="bg-grass text-white py-1 px-3" @click="game.tileBrowserX -= 32">
+                <div class="cursor-pointer bg-grass text-white py-1 px-3" @click="game.tileBrowserX -= 32">
                   -
                 </div>
-                <div class="bg-grass text-white py-1 px-3 ml-auto" @click="game.tileBrowserX += 32">
+                <div class="cursor-pointer bg-grass text-white py-1 px-3 ml-auto" @click="game.tileBrowserX += 32">
                   +
                 </div>
               </div>
@@ -103,10 +103,10 @@
             <div class="flex-col">
               <input v-model.number="game.tileBrowserY" placeholder="map Y" class="py-2 px-4">
               <div class="flex pt-2">
-                <div class="bg-grass text-white py-1 px-3" @click="game.tileBrowserY -= 32">
+                <div class="cursor-pointer bg-grass text-white py-1 px-3" @click="game.tileBrowserY -= 32">
                   -
                 </div>
-                <div class="bg-grass text-white py-1 px-3 ml-auto" @click="game.tileBrowserY += 32">
+                <div class="cursor-pointer bg-grass text-white py-1 px-3 ml-auto" @click="game.tileBrowserY += 32">
                   +
                 </div>
               </div>
