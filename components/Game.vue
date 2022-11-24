@@ -2,6 +2,11 @@
   <div class="w-full flex flex-col items-center justify-center pb-12">
     <div v-if="locationError" class="text-center text-red">
       This game does not work without location access, please enable location services and reload the page.
+      <div class="flex w-full pt-4 justify-center">
+        <div class="flex rounded-md cursor-pointer shadow-md px-5 py-2 text-white bg-grass" @click="continueWithoutLocation">
+          Continue without location
+        </div>
+      </div>
     </div>
     <div v-else-if="!game.anyLoaded" class="w-full flex flex-col items-center justify-center">
       <div class="loading-container">
@@ -14,62 +19,80 @@
         Reset
       </div>
     </div>
-    <div v-else class="w-full flex flex-col items-center justify-center">
-      <div
-        class="gameboy bg-gameboy-grey max-w-full flex flex-col items-center justify-center rounded-2xl shadow-md px-2 py-2 md:px-4 md:py-4"
-      >
+    <div
+      v-else
+      class="w-full flex justify-center"
+      :class="{
+        'flex-col': !game.debugPosition,
+        'items-center': !game.debugPosition,
+        'flex-row': game.debugPosition
+      }"
+    >
+      <div>
         <div
-          class="flex flex-row overflow-scroll"
-          :style="{
-            maxWidth: (game.canvasWidth * game.scale) + 'px'
-          }"
+          class="gameboy bg-gameboy-grey max-w-full flex flex-col items-center justify-center rounded-2xl shadow-md px-2 py-2 md:px-4 md:py-4"
         >
-          <canvas ref="pwg" class="bg-black rounded-lg" :width="(game.canvasWidth * game.scale)+'px'" :height="(game.canvasHeight*game.scale)+'px'" />
-          <canvas v-if="game.showLayer1" ref="layer1" class="bg-black ml-8 rounded-lg" :width="(game.canvasWidth * game.scale)+'px'" :height="(game.canvasHeight*game.scale)+'px'" />
-          <canvas v-if="game.showLayerGmap" ref="gmap" class="bg-black ml-8 rounded-lg" :width="(game.canvasWidth * game.scale)+'px'" :height="(game.canvasHeight*game.scale)+'px'" />
-        </div>
-        <div class="w-full pt-10 md:pt-14 pb-12">
-          <div class="controls flex flex-row">
-            <div class="dpad ml-4 md:ml-12">
-              <div class="up" @click="action('moveUp')" />
-              <div class="right" @click="action('moveRight')" />
-              <div class="down" @click="action('moveDown')" />
-              <div class="left" @click="action('moveLeft')" />
-              <div class="middle" />
-            </div>
-            <div class="ml-auto a-b mr-4 md:mr-12">
-              <div class="b">
-                B
-              </div>
-              <div class="a">
-                A
-              </div>
-            </div>
+          <div
+            class="flex flex-row overflow-scroll"
+            :style="{
+              maxWidth: (game.canvasWidth * game.scale) + 'px'
+            }"
+          >
+            <canvas ref="pwg" class="bg-black rounded-lg" :width="(game.canvasWidth * game.scale)+'px'" :height="(game.canvasHeight*game.scale)+'px'" />
+            <canvas v-if="game.showLayer1" ref="layer1" class="bg-black ml-8 rounded-lg" :width="(game.canvasWidth * game.scale)+'px'" :height="(game.canvasHeight*game.scale)+'px'" />
+            <canvas v-if="game.showLayerGmap" ref="gmap" class="bg-black ml-8 rounded-lg" :width="(game.canvasWidth * game.scale)+'px'" :height="(game.canvasHeight*game.scale)+'px'" />
           </div>
-          <div class="pt-12 md:pt-20" />
-          <div class="start-select">
-            <div class="select cursor-pointer" @click="zoom('out')">
-              -
+          <div class="w-full pt-10 md:pt-14 pb-12">
+            <div class="controls flex flex-row">
+              <div class="dpad ml-4 md:ml-12">
+                <div class="up" @click="action('moveUp')" />
+                <div class="right" @click="action('moveRight')" />
+                <div class="down" @click="action('moveDown')" />
+                <div class="left" @click="action('moveLeft')" />
+                <div class="middle" />
+              </div>
+              <div class="ml-auto a-b mr-4 md:mr-12">
+                <div class="b">
+                  B
+                </div>
+                <div class="a">
+                  A
+                </div>
+              </div>
             </div>
-            <div class="select cursor-pointer" @click="zoom('in')">
-              +
-            </div>
-            <div class="select cursor-pointer" @click="game.debug = !game.debug">
-              SELECT
-            </div>
-            <div class="start cursor-pointer">
-              START
+            <div class="pt-12 md:pt-20" />
+            <div class="start-select">
+              <div class="select cursor-pointer" @click="zoom('out')">
+                -
+              </div>
+              <div class="select cursor-pointer" @click="zoom('in')">
+                +
+              </div>
+              <div class="select cursor-pointer" @click="game.debug = !game.debug">
+                SELECT
+              </div>
+              <div class="start cursor-pointer">
+                START
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <div v-if="game.debug" class="flex flex-col">
-        <div class="flex flex-row items-center justify-center flex-wrap pt-8">
+      <div v-if="game.debug" class="flex flex-col md:px-12">
+        <div
+          class="flex flex-row items-center flex-wrap pt-8"
+          :class="{
+            'justify-center': !game.debugPosition
+          }"
+        >
           <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.regenerate = !game.regenerate">
             Regenerate {{ game.regenerate ? 'On' : 'Off' }}
           </div>
           <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.tileBrowser = !game.tileBrowser">
             Tile Browser {{ game.tileBrowser ? 'On' : 'Off' }}
+          </div>
+          <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.tileBrowserUsePlayer = !game.tileBrowserUsePlayer">
+            Tile Browser Use Player Location {{ game.tileBrowserUsePlayer ? 'On' : 'Off' }}
           </div>
           <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.showLayer1 = !game.showLayer1">
             Layer 1 {{ game.showLayer1 ? 'On' : 'Off' }}
@@ -83,12 +106,15 @@
           <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.zoomMode = !game.zoomMode">
             Zoom Mode {{ game.zoomMode ? 'On' : 'Off' }}
           </div>
+          <div class="py-2 px-8 mr-4 mb-4 bg-grass text-white cursor-pointer" @click="game.debugPosition = !game.debugPosition">
+            Debug {{ game.debugPosition ? 'Right' : 'Bottom' }}
+          </div>
           <div class="py-2 px-8 mb-4 bg-grass text-white cursor-pointer" @click="resetGame">
             Reset
           </div>
         </div>
         <div v-if="game.tileBrowser">
-          <div class="flex flex-row">
+          <div class="flex flex-row pb-4">
             <div class="flex-col mr-2">
               <input v-model.number="game.tileBrowserX" placeholder="map X" class="py-2 px-4">
               <div class="flex pt-2">
@@ -164,6 +190,7 @@ export default {
         zoomScale: 0.8,
         regenerate: false,
         anyLoaded: false,
+        debugPosition: false,
         canvasWidth: 512,
         canvasHeight: 512,
         debug: false,
@@ -184,6 +211,7 @@ export default {
         tileSize,
         blockSize,
         tileBrowser: false,
+        tileBrowserUsePlayer: false,
         tileBrowserX: 0,
         tileBrowserY: 0
       },
@@ -199,7 +227,7 @@ export default {
   },
   computed: {
     tileBrowserTile() {
-      return Object.values(this.tileDb).find(tile => tile.mapX == this.game.tileBrowserX && tile.mapY == this.game.tileBrowserY)
+      return Object.values(this.tileDb).find(tile => tile.mapX === this.game.tileBrowserX && tile.mapY === this.game.tileBrowserY)
     },
     tileBrowserTiles() {
       return this.tileHistoryDb[this.tileBrowserTile?.uuid]
@@ -245,6 +273,10 @@ export default {
             key: 'player',
             value: JSON.parse(JSON.stringify(this.player))
           })
+          if (this.game.tileBrowserUsePlayer) {
+            this.game.tileBrowserX = this.player.x
+            this.game.tileBrowserY = this.player.y
+          }
         }
       },
       deep: true
@@ -459,6 +491,10 @@ export default {
         this.resizeGame()
       })
     },
+    continueWithoutLocation() {
+      window.localStorage.setItem('continueWithoutLocation', true)
+      window.location.reload()
+    },
     getLocation() {
       if (navigator.geolocation) {
         return new Promise((resolve) => {
@@ -470,12 +506,28 @@ export default {
               longitude: position.coords.longitude
             })
           }, (err) => {
-            console.error(err)
-            this.locationError = true
-            resolve()
+            const continueWithoutLocation = window.localStorage.getItem('continueWithoutLocation')
+            if (continueWithoutLocation === 'true') {
+              console.log('Resolving fixed latitude longitude')
+              resolve({
+                longitude: 145.00569971273293,
+                latitude: -37.87569351417865
+
+              })
+            } else {
+              console.error(err)
+              this.locationError = true
+            }
           })
         })
       } else {
+        if (this.game.continueWithoutLocation) {
+          return {
+            longitude: 145.00569971273293,
+            latitude: -37.87569351417865
+
+          }
+        }
         return false
       }
     },
